@@ -1,0 +1,7 @@
+node_modules/
+out/
+backup/
+# word-alignment Python env (faster-whisper): large, machine-specific, rebuilt per machine
+tools/voice/.venv/
+__pycache__/
+topics/

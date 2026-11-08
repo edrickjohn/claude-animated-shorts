@@ -92,12 +92,26 @@ const Inner: React.FC<{ id: number; kit: Kit }> = ({ id, kit }) => {
 };
 
 /** test stills only: inputProps `{ post: { dpr: 0.5 } }` forces the WebGL buffer size (R3F clamps dpr to >= 1 by default) */
+/** Remotion draws each frame once while rendering; the EffectComposer needs one more draw before its output shows
+ *  (without this, every rendered frame is blank). Holds the frame until a second advance() has run. */
+const Redraw: React.FC = () => {
+  const { advance } = useThree();
+  const f = useCurrentFrame();
+  useEffect(() => {
+    const h = delayRender("bridge redraw");
+    const raf = requestAnimationFrame(() => { advance(performance.now()); continueRender(h); });
+    return () => { cancelAnimationFrame(raf); continueRender(h); };
+  }, [f, advance]);
+  return null;
+};
+
 const dprOverride = () => (getInputProps() as { post?: { dpr?: number } }).post?.dpr;
 const ShotView: React.FC<{ id: number; kit: Kit; alpha: number }> = ({ id, kit, alpha }) => (
   <AbsoluteFill style={{ opacity: alpha }}>
     <ThreeCanvas width={1080} height={1920} {...(dprOverride() ? { dpr: dprOverride() } : {})} shadows gl={{ antialias: false, stencil: false, powerPreference: "high-performance", toneMappingExposure: 1.0 }}
       camera={{ fov: 40, near: 0.2, far: 1500 }}>
       <Inner id={id} kit={kit} />
+      <Redraw />
     </ThreeCanvas>
   </AbsoluteFill>
 );
